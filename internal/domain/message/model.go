@@ -38,8 +38,11 @@ type Message struct {
 	FromUserID       string `gorm:"not null;default:''"         json:"fromUserId"`
 	WaTimestamp      int64  `gorm:"not null"                    json:"waTimestamp"`
 	Body             string `gorm:"type:text;not null;default:''" json:"body"`
-	MessageType      string `gorm:"not null;default:'text'"     json:"messageType"`
-	TemplateName     string `gorm:"default:''"                  json:"templateName"`
+	MessageType      string `gorm:"not null;default:'text'"       json:"messageType"`
+	TemplateName     string `gorm:"default:''"                    json:"templateName"`
+	Filename         string `gorm:"default:''"                    json:"filename"`
+	MimeType         string `gorm:"default:''"                    json:"mimeType"`
+	MediaURL         string `gorm:"default:''"                    json:"mediaUrl"`
 
 	Direction Direction `gorm:"not null;default:'inbound'"  json:"direction"`
 	Status    Status    `gorm:"not null;default:'received'" json:"status"`

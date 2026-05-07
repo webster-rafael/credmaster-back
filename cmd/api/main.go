@@ -47,7 +47,7 @@ func main() {
 
 	msgRepo := inframessage.NewPostgresRepository(db)
 	whatsRepo := infrawhatsapp.NewPostgresRepository(db)
-	msgHandler := domainmessage.NewHandler(msgRepo, whatsRepo, clientRepo, cfg.WebhookSendMessage)
+	msgHandler := domainmessage.NewHandler(msgRepo, whatsRepo, clientRepo, cfg.WebhookSendMessage, cfg.BaseURL)
 
 	wsHub := hub.New()
 	go wsHub.Run()

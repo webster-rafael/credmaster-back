@@ -30,6 +30,17 @@ type notifyPayload struct {
 	MessageType string `json:"messageType"`
 	Direction   string `json:"direction"`
 	Status      string `json:"status"`
+	Filename    string `json:"filename"`
+	MimeType    string `json:"mimeType"`
+	MediaURL    string `json:"mediaUrl"`
+}
+
+// statusUpdatePayload mirrors the JSON emitted by the status update trigger.
+type statusUpdatePayload struct {
+	ID         string `json:"id"`
+	CompanyID  uint   `json:"companyId"`
+	FromUserID string `json:"fromUserId"`
+	Status     string `json:"status"`
 }
 
 // Client represents a single WebSocket connection.
@@ -201,6 +212,9 @@ func listen(ctx context.Context, databaseURL string, h *Hub) error {
 	if _, err := conn.Exec(ctx, "LISTEN new_message"); err != nil {
 		return err
 	}
+	if _, err := conn.Exec(ctx, "LISTEN status_update"); err != nil {
+		return err
+	}
 
 	log.Println("[ws] pg listener ready")
 
@@ -210,22 +224,38 @@ func listen(ctx context.Context, databaseURL string, h *Hub) error {
 			return err
 		}
 
-		var payload notifyPayload
-		if err := json.Unmarshal([]byte(notification.Payload), &payload); err != nil {
-			log.Printf("[ws] invalid notify payload: %v", err)
-			continue
-		}
+		switch notification.Channel {
+		case "new_message":
+			var payload notifyPayload
+			if err := json.Unmarshal([]byte(notification.Payload), &payload); err != nil {
+				log.Printf("[ws] invalid new_message payload: %v", err)
+				continue
+			}
+			data, err := json.Marshal(payload)
+			if err != nil {
+				continue
+			}
+			envelope, err := json.Marshal(WsMessage{Type: "new_message", Data: data})
+			if err != nil {
+				continue
+			}
+			h.Broadcast(payload.CompanyID, envelope)
 
-		data, err := json.Marshal(payload)
-		if err != nil {
-			continue
+		case "status_update":
+			var payload statusUpdatePayload
+			if err := json.Unmarshal([]byte(notification.Payload), &payload); err != nil {
+				log.Printf("[ws] invalid status_update payload: %v", err)
+				continue
+			}
+			data, err := json.Marshal(payload)
+			if err != nil {
+				continue
+			}
+			envelope, err := json.Marshal(WsMessage{Type: "status_update", Data: data})
+			if err != nil {
+				continue
+			}
+			h.Broadcast(payload.CompanyID, envelope)
 		}
-
-		envelope, err := json.Marshal(WsMessage{Type: "new_message", Data: data})
-		if err != nil {
-			continue
-		}
-
-		h.Broadcast(payload.CompanyID, envelope)
 	}
 }

@@ -31,6 +31,8 @@ func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler, msgHa
 		MaxAge:           300,
 	}))
 
+	r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir("uploads"))))
+
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -55,6 +57,8 @@ func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler, msgHa
 				r.Get("/conversations", msgHandler.GetConversations)
 				r.Get("/thread", msgHandler.GetThread)
 				r.Post("/send", msgHandler.Send)
+				r.Post("/send-document", msgHandler.SendDocument)
+				r.Delete("/conversation", msgHandler.DeleteConversation)
 			})
 
 			r.Route("/clients", func(r chi.Router) {

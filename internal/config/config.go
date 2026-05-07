@@ -8,6 +8,7 @@ type Config struct {
 	JWTSecret          string
 	Env                string
 	WebhookSendMessage string
+	BaseURL            string
 }
 
 func Load() *Config {
@@ -17,6 +18,7 @@ func Load() *Config {
 		JWTSecret:          getEnv("JWT_SECRET", ""),
 		Env:                getEnv("ENV", "development"),
 		WebhookSendMessage: getEnv("WEBHOOK_SENDMESSAGE", ""),
+		BaseURL:            getEnv("BASE_URL", "http://localhost:8080"),
 	}
 }
 

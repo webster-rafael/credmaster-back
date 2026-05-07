@@ -25,5 +25,6 @@ type Repository interface {
 	FindByCompanyID(ctx context.Context, companyID uint, limit, offset int) ([]Message, error)
 	FindByClientID(ctx context.Context, clientID uint) ([]Message, error)
 	FindByWaID(ctx context.Context, waID string, companyID uint) ([]Message, error)
+	DeleteByWaID(ctx context.Context, waID string, companyID uint) error
 	GetConversations(ctx context.Context, companyID uint) ([]ConversationSummary, error)
 }

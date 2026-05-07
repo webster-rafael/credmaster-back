@@ -55,6 +55,12 @@ func (r *postgresRepository) FindByWaID(ctx context.Context, waID string, compan
 	return msgs, err
 }
 
+func (r *postgresRepository) DeleteByWaID(ctx context.Context, waID string, companyID uint) error {
+	return r.db.WithContext(ctx).
+		Where("from_user_id = ? AND company_id = ?", waID, companyID).
+		Delete(&domain.Message{}).Error
+}
+
 // GetConversations returns the latest message per unique contact (grouped by from_user_id),
 // ordered by most recent activity, with unread count per contact.
 func (r *postgresRepository) GetConversations(ctx context.Context, companyID uint) ([]domain.ConversationSummary, error) {

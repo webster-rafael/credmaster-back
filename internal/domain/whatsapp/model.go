@@ -14,4 +14,5 @@ type WhatsConfig struct {
 	CompanyID          uint           `gorm:"uniqueIndex;not null" json:"companyId"`
 	DisplayPhoneNumber string         `gorm:"not null" json:"displayPhoneNumber"`
 	PhoneNumberID      string         `gorm:"not null" json:"phoneNumberId"`
+	AccessToken        string         `gorm:"not null;default:''" json:"-"`
 }
