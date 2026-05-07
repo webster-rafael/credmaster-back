@@ -10,12 +10,16 @@ import (
 
 	"github.com/websterdev/cred-master/internal/config"
 	"github.com/websterdev/cred-master/internal/database"
-	domainclient "github.com/websterdev/cred-master/internal/domain/client"
 	domainauth "github.com/websterdev/cred-master/internal/domain/auth"
+	domainboleto "github.com/websterdev/cred-master/internal/domain/boleto"
+	domaincampaign "github.com/websterdev/cred-master/internal/domain/campaign"
+	domainclient "github.com/websterdev/cred-master/internal/domain/client"
 	domainmessage "github.com/websterdev/cred-master/internal/domain/message"
 	domainwhatsapp "github.com/websterdev/cred-master/internal/domain/whatsapp"
 	domainws "github.com/websterdev/cred-master/internal/domain/ws"
 	infraauth "github.com/websterdev/cred-master/internal/infrastructure/auth"
+	infroboleto "github.com/websterdev/cred-master/internal/infrastructure/boleto"
+	infracampaign "github.com/websterdev/cred-master/internal/infrastructure/campaign"
 	infraclient "github.com/websterdev/cred-master/internal/infrastructure/client"
 	inframessage "github.com/websterdev/cred-master/internal/infrastructure/message"
 	infrawhatsapp "github.com/websterdev/cred-master/internal/infrastructure/whatsapp"
@@ -34,7 +38,7 @@ func main() {
 		log.Fatalf("database connection failed: %v", err)
 	}
 
-	if err := db.AutoMigrate(&domainauth.Company{}, &domainauth.User{}, &domainmessage.Message{}, &domainclient.Client{}, &domainwhatsapp.WhatsConfig{}); err != nil {
+	if err := db.AutoMigrate(&domainauth.Company{}, &domainauth.User{}, &domainmessage.Message{}, &domainclient.Client{}, &domainwhatsapp.WhatsConfig{}, &domaincampaign.Campaign{}, &domainboleto.Boleto{}); err != nil {
 		log.Fatalf("migration failed: %v", err)
 	}
 
@@ -55,7 +59,15 @@ func main() {
 
 	wsHandler := domainws.NewHandler(wsHub, cfg.JWTSecret)
 
-	r := router.New(db, cfg, authHandler, msgHandler, clientHandler, wsHandler)
+	whatsHandler := domainwhatsapp.NewHandler(whatsRepo)
+
+	boletoRepo := infroboleto.NewPostgresRepository(db)
+	boletoHandler := domainboleto.NewHandler(boletoRepo, cfg.BaseURL)
+
+	campaignRepo := infracampaign.NewPostgresRepository(db)
+	campaignHandler := domaincampaign.NewHandler(campaignRepo, clientRepo, boletoRepo, whatsRepo, cfg.TriggerTemplatesWebhook, cfg.BaseURL)
+
+	r := router.New(db, cfg, authHandler, msgHandler, clientHandler, wsHandler, whatsHandler, campaignHandler, boletoHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.Port)
 	log.Printf("server listening on %s", addr)

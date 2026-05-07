@@ -15,4 +15,6 @@ type WhatsConfig struct {
 	DisplayPhoneNumber string         `gorm:"not null" json:"displayPhoneNumber"`
 	PhoneNumberID      string         `gorm:"not null" json:"phoneNumberId"`
 	AccessToken        string         `gorm:"not null;default:''" json:"-"`
+	UserAccessToken    string         `gorm:"default:''" json:"-"`
+	WabaID             string         `gorm:"default:''" json:"wabaId"`
 }

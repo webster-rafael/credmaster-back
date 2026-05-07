@@ -34,6 +34,14 @@ func (r *postgresRepository) FindAllByCompany(ctx context.Context, companyID uin
 	return clients, err
 }
 
+func (r *postgresRepository) FindByIDs(ctx context.Context, ids []uint, companyID uint) ([]domain.Client, error) {
+	var clients []domain.Client
+	err := r.db.WithContext(ctx).
+		Where("id IN ? AND company_id = ?", ids, companyID).
+		Find(&clients).Error
+	return clients, err
+}
+
 func (r *postgresRepository) FindByWaID(ctx context.Context, waID string, companyID uint) (*domain.Client, error) {
 	var client domain.Client
 	err := r.db.WithContext(ctx).

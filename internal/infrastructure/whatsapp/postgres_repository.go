@@ -20,3 +20,9 @@ func (r *postgresRepository) FindByCompanyID(ctx context.Context, companyID uint
 	err := r.db.WithContext(ctx).Where("company_id = ?", companyID).First(&cfg).Error
 	return &cfg, err
 }
+
+func (r *postgresRepository) UpdateWabaID(ctx context.Context, configID uint, wabaID string) error {
+	return r.db.WithContext(ctx).Model(&domain.WhatsConfig{}).
+		Where("id = ?", configID).
+		Update("waba_id", wabaID).Error
+}

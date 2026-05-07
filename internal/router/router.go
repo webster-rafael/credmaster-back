@@ -9,14 +9,17 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/websterdev/cred-master/internal/config"
-	domainclient "github.com/websterdev/cred-master/internal/domain/client"
 	domainauth "github.com/websterdev/cred-master/internal/domain/auth"
+	domainboleto "github.com/websterdev/cred-master/internal/domain/boleto"
+	domaincampaign "github.com/websterdev/cred-master/internal/domain/campaign"
+	domainclient "github.com/websterdev/cred-master/internal/domain/client"
 	domainmessage "github.com/websterdev/cred-master/internal/domain/message"
+	domainwhatsapp "github.com/websterdev/cred-master/internal/domain/whatsapp"
 	domainws "github.com/websterdev/cred-master/internal/domain/ws"
 	appmiddleware "github.com/websterdev/cred-master/internal/middleware"
 )
 
-func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler, msgHandler *domainmessage.Handler, clientHandler *domainclient.Handler, wsHandler *domainws.Handler) http.Handler {
+func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler, msgHandler *domainmessage.Handler, clientHandler *domainclient.Handler, wsHandler *domainws.Handler, whatsHandler *domainwhatsapp.Handler, campaignHandler *domaincampaign.Handler, boletoHandler *domainboleto.Handler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -65,6 +68,24 @@ func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler, msgHa
 				r.Get("/", clientHandler.List)
 				r.Post("/", clientHandler.Create)
 				r.Delete("/{id}", clientHandler.Delete)
+			})
+
+			r.Route("/whatsapp", func(r chi.Router) {
+				r.Get("/templates", whatsHandler.GetTemplates)
+				r.Post("/templates", whatsHandler.CreateTemplate)
+			})
+
+			r.Route("/campaigns", func(r chi.Router) {
+				r.Get("/", campaignHandler.List)
+				r.Post("/", campaignHandler.Create)
+				r.Patch("/{id}/dispatch", campaignHandler.Dispatch)
+			})
+
+			r.Route("/boletos", func(r chi.Router) {
+				r.Get("/", boletoHandler.List)
+				r.Post("/", boletoHandler.Create)
+				r.Post("/bulk", boletoHandler.BulkCreate)
+				r.Delete("/", boletoHandler.DeleteBulk)
 			})
 		})
 	})
