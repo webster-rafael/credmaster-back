@@ -24,3 +24,7 @@ func (r *postgresRepository) FindByEmail(ctx context.Context, email string) (*do
 func (r *postgresRepository) Create(ctx context.Context, user *domain.User) error {
 	return r.db.WithContext(ctx).Create(user).Error
 }
+
+func (r *postgresRepository) CreateCompany(ctx context.Context, company *domain.Company) error {
+	return r.db.WithContext(ctx).Create(company).Error
+}

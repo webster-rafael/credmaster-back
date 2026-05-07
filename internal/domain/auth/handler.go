@@ -28,9 +28,11 @@ func writeError(w http.ResponseWriter, status int, message string) {
 }
 
 type userView struct {
-	ID    uint   `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID        uint   `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	CompanyID uint   `json:"companyId"`
+	Role      string `json:"role"`
 }
 
 type loginRequestBody struct {
@@ -39,9 +41,10 @@ type loginRequestBody struct {
 }
 
 type registerRequestBody struct {
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	CompanyName string `json:"companyName"`
 }
 
 type forgotPasswordRequestBody struct {
@@ -68,7 +71,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"message": "login successful",
 		"data": map[string]any{
-			"user":   userView{ID: user.ID, Name: user.Name, Email: user.Email},
+			"user": userView{
+				ID:        user.ID,
+				Name:      user.Name,
+				Email:     user.Email,
+				CompanyID: user.CompanyID,
+				Role:      user.Role,
+			},
 			"tokens": pair,
 		},
 	})
@@ -81,13 +90,18 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	companyName := req.CompanyName
+	if companyName == "" {
+		companyName = req.Name + " - Empresa"
+	}
+
 	user := &User{
 		Name:     req.Name,
 		Email:    req.Email,
 		Password: req.Password,
 	}
 
-	if err := h.service.Register(r.Context(), user); err != nil {
+	if err := h.service.Register(r.Context(), user, companyName); err != nil {
 		if errors.Is(err, ErrEmailAlreadyRegistered) {
 			writeError(w, http.StatusConflict, "email already registered")
 			return
@@ -100,7 +114,13 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		"success": true,
 		"message": "account created",
 		"data": map[string]any{
-			"user": userView{ID: user.ID, Name: user.Name, Email: user.Email},
+			"user": userView{
+				ID:        user.ID,
+				Name:      user.Name,
+				Email:     user.Email,
+				CompanyID: user.CompanyID,
+				Role:      user.Role,
+			},
 		},
 	})
 }

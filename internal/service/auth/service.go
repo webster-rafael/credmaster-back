@@ -26,10 +26,12 @@ func New(repo domain.Repository, jwtSecret string) domain.Service {
 }
 
 type accessClaims struct {
-	UserID uint   `json:"sub"`
-	Email  string `json:"email"`
-	Name   string `json:"name"`
-	Type   string `json:"type"`
+	UserID    uint   `json:"sub"`
+	CompanyID uint   `json:"company_id"`
+	Email     string `json:"email"`
+	Name      string `json:"name"`
+	Role      string `json:"role"`
+	Type      string `json:"type"`
 	jwt.RegisteredClaims
 }
 
@@ -50,10 +52,12 @@ func (s *service) generateTokenPair(user *domain.User) (*domain.TokenPair, error
 	now := time.Now()
 
 	access := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims{
-		UserID: user.ID,
-		Email:  user.Email,
-		Name:   user.Name,
-		Type:   "access",
+		UserID:    user.ID,
+		CompanyID: user.CompanyID,
+		Email:     user.Email,
+		Name:      user.Name,
+		Role:      user.Role,
+		Type:      "access",
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(15 * time.Minute)),
@@ -85,7 +89,7 @@ func (s *service) generateTokenPair(user *domain.User) (*domain.TokenPair, error
 	}, nil
 }
 
-func (s *service) Register(ctx context.Context, user *domain.User) error {
+func (s *service) Register(ctx context.Context, user *domain.User, companyName string) error {
 	existing, err := s.repo.FindByEmail(ctx, user.Email)
 	if err == nil && existing != nil {
 		return domain.ErrEmailAlreadyRegistered
@@ -98,8 +102,15 @@ func (s *service) Register(ctx context.Context, user *domain.User) error {
 	if err != nil {
 		return fmt.Errorf("hashing password: %w", err)
 	}
-
 	user.Password = string(hashed)
+
+	company := &domain.Company{Name: companyName}
+	if err := s.repo.CreateCompany(ctx, company); err != nil {
+		return fmt.Errorf("creating company: %w", err)
+	}
+
+	user.CompanyID = company.ID
+	user.Role = "owner"
 	return s.repo.Create(ctx, user)
 }
 

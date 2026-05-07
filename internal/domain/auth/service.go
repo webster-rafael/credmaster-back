@@ -13,8 +13,8 @@ type Credentials struct {
 }
 
 type TokenPair struct {
-	AccessToken  string
-	RefreshToken string
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 type ForgotPasswordResult struct {
@@ -23,6 +23,6 @@ type ForgotPasswordResult struct {
 
 type Service interface {
 	Login(ctx context.Context, credentials Credentials) (*User, *TokenPair, error)
-	Register(ctx context.Context, user *User) error
+	Register(ctx context.Context, user *User, companyName string) error
 	ForgotPassword(ctx context.Context, email string) (*ForgotPasswordResult, error)
 }

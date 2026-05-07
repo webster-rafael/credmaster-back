@@ -1,11 +1,35 @@
 package middleware
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+type contextKey string
+
+const (
+	contextKeyUserID    contextKey = "user_id"
+	contextKeyCompanyID contextKey = "company_id"
+	contextKeyRole      contextKey = "role"
+)
+
+func GetUserID(ctx context.Context) uint {
+	v, _ := ctx.Value(contextKeyUserID).(uint)
+	return v
+}
+
+func GetCompanyID(ctx context.Context) uint {
+	v, _ := ctx.Value(contextKeyCompanyID).(uint)
+	return v
+}
+
+func GetRole(ctx context.Context) string {
+	v, _ := ctx.Value(contextKeyRole).(string)
+	return v
+}
 
 func Auth(jwtSecret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -33,7 +57,29 @@ func Auth(jwtSecret string) func(http.Handler) http.Handler {
 				return
 			}
 
-			next.ServeHTTP(w, r)
+			claims, ok := token.Claims.(jwt.MapClaims)
+			if !ok {
+				http.Error(w, `{"error":"invalid token claims"}`, http.StatusUnauthorized)
+				return
+			}
+
+			var userID uint
+			if v, ok := claims["sub"].(float64); ok {
+				userID = uint(v)
+			}
+
+			var companyID uint
+			if v, ok := claims["company_id"].(float64); ok {
+				companyID = uint(v)
+			}
+
+			role, _ := claims["role"].(string)
+
+			ctx := context.WithValue(r.Context(), contextKeyUserID, userID)
+			ctx = context.WithValue(ctx, contextKeyCompanyID, companyID)
+			ctx = context.WithValue(ctx, contextKeyRole, role)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

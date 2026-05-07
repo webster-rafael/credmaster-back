@@ -9,11 +9,14 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/websterdev/cred-master/internal/config"
+	domainclient "github.com/websterdev/cred-master/internal/domain/client"
 	domainauth "github.com/websterdev/cred-master/internal/domain/auth"
+	domainmessage "github.com/websterdev/cred-master/internal/domain/message"
+	domainws "github.com/websterdev/cred-master/internal/domain/ws"
 	appmiddleware "github.com/websterdev/cred-master/internal/middleware"
 )
 
-func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler) http.Handler {
+func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler, msgHandler *domainmessage.Handler, clientHandler *domainclient.Handler, wsHandler *domainws.Handler) http.Handler {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RequestID)
@@ -41,9 +44,24 @@ func New(db *gorm.DB, cfg *config.Config, authHandler *domainauth.Handler) http.
 			r.Post("/forgot-password", authHandler.ForgotPassword)
 		})
 
+		// WebSocket — auth via ?token= query param (no middleware needed)
+		r.Get("/ws", wsHandler.ServeWS)
+
 		r.Group(func(r chi.Router) {
 			r.Use(appmiddleware.Auth(cfg.JWTSecret))
 			_ = db
+
+			r.Route("/messages", func(r chi.Router) {
+				r.Get("/conversations", msgHandler.GetConversations)
+				r.Get("/thread", msgHandler.GetThread)
+				r.Post("/send", msgHandler.Send)
+			})
+
+			r.Route("/clients", func(r chi.Router) {
+				r.Get("/", clientHandler.List)
+				r.Post("/", clientHandler.Create)
+				r.Delete("/{id}", clientHandler.Delete)
+			})
 		})
 	})
 
